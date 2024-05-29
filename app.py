@@ -77,7 +77,46 @@ def call_downstream_api():
 @app.route('/get-site', methods=['GET', 'POST'])
 def get_site():
     if request.method == 'GET':
-        return render_template('get-site.html')
+        token = auth.get_token_for_user(scopes=['Sites.Read.All'])
+        if "error" in token:
+            return redirect(url_for("login"))
 
+        site_url = 'hfmlegal.sharepoint.com:/sites/HFMOrganization'
+
+        try:
+            # Fetch site information
+            site_response = requests.get(
+                f'https://graph.microsoft.com/v1.0/sites/{site_url}',
+                headers={'Authorization': f'Bearer {token["access_token"]}'},
+                timeout=30
+            )
+            site_response.raise_for_status()
+            site_info = site_response.json()
+            site_id = site_info['id']
+
+            # Fetch all lists in the site
+            lists_response = requests.get(
+                f'https://graph.microsoft.com/v1.0/sites/{site_id}/lists',
+                headers={'Authorization': f'Bearer {token["access_token"]}'},
+                timeout=30
+            )
+            lists_response.raise_for_status()
+            team_lists = lists_response.json()
+
+            # Find the list with displayName 'Files'
+            lists = None
+            for list_item in team_lists['value']:
+                if list_item['displayName'] == 'Files':
+                    lists = list_item
+                    break
+
+            if not lists:
+                return "No list with displayName 'Files' found."
+            print(lists['id'])
+            return render_template('get-site.html', lists=lists)
+        except requests.exceptions.RequestException as e:
+            print(f"Request failed: {e}")
+            return "An error occurred while fetching the site information."
+        
 if __name__ == "__main__":
     app.run()
