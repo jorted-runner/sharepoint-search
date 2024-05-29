@@ -6,9 +6,172 @@
     <title>TEST GET SITE</title>
 </head>
 <body>
-    <h1>TESTING</h1>
-    <pre>{{ lists |tojson(indent=4) }}</pre>
+    <form action="/submit_form" method="post">
+        <label for="dropdown">Select an Client:</label>
+        <select id="dropdown" name="dropdown">
+        {% for client in clients %}
+            {% if client['fields']['Title'] and not client['fields']['Title'].isalpha() %}
+                <option>{{client['fields']['Title']}} - {{client['fields']['ClientDescription']}} - {{client['fields']['ClientType']}}</option>
+            {% endif %}
+        {% endfor %}
+        </select>
+        <label for="name">Name: </label>
+        <input type="text" id="name" name="name">
+        <label for="textInFile">Text in File: </label>
+        <input type="text" id="textInFile" name="textInFile">
+        <label for="dateModified">Date Modified: </label>
+        <input type="text" id="dateModified" name="dateModified">
+        <label for="category">Category: </label>
+        <input type="text" id="category" name="category">
+        <label for="docType">DocType</label>
+        <label for="docType">Select Document Type:</label>
+        <select id="docType" name="docType">
+            <option value="ACCPT">ACCPT - Acceptance of Trust</option>
+            <option value="ADV">ADV - Advertisement</option>
+            <option value="AFF">AFF - Affidavit</option>
+            <option value="AGN">AGN - Agenda</option>
+            <option value="AGR">AGR - Agreement/Contract</option>
+            <option value="ANS">ANS - Answer</option>
+            <option value="APNDX">APNDX - Appendix</option>
+            <option value="APP">APP - Application</option>
+            <option value="APPRS">APPRS - Appraisal</option>
+            <option value="ART">ART - Articles</option>
+            <option value="ASSGN">ASSGN - Assignment</option>
+            <option value="AUTH">AUTH - Authorization</option>
+            <option value="BAL">BAL - Ballot</option>
+            <option value="BILLS">BILLS - Medical Bills</option>
+            <option value="BND">BND - Bond</option>
+            <option value="BOC">BOC - Bill of Costs</option>
+            <option value="BOS">BOS - Bill of Sale</option>
+            <option value="BRF">BRF - Brief</option>
+            <option value="BYL">BYL - Bylaws</option>
+            <option value="CERT">CERT - Certificate</option>
+            <option value="CEX">CEX - Cross Examination</option>
+            <option value="CHRT">CHRT - Chart</option>
+            <option value="CLAIMS">CLAIMS - Claims</option>
+            <option value="CLIENT">CLIENT - Client Information Sheet</option>
+            <option value="CLST">CLST - Closing Statement</option>
+            <option value="COC">COC - Chain of Custody</option>
+            <option value="COD">COD - Codicil</option>
+            <option value="CORPR">CORPR - Corporate Record</option>
+            <option value="COS">COS - Certificate of Service</option>
+            <option value="CTYCD">CTYCD - City Code</option>
+            <option value="CV">CV - Curriculum Vitae</option>
+            <option value="DCS">DCS - Decision</option>
+            <option value="DEATH">DEATH - Death Certificate</option>
+            <option value="DECCR">DECCR - Declaration of Covenants and Restriction</option>
+            <option value="DECLAR">DECLAR - Declaration</option>
+            <option value="DED">DED - Deed</option>
+            <option value="DEPS">DEPS - Deposition Summary</option>
+            <option value="DEPT">DEPT - Deposition transcript</option>
+            <option value="DES">DES - Designation</option>
+            <option value="DEX">DEX - Direct Examination</option>
+            <option value="DISC">DISC - Disclaimer</option>
+            <option value="DISCLO">DISCLO - Disclosure</option>
+            <option value="DISM">DISM - Dismissal</option>
+            <option value="DOT">DOT - Deed of Trust</option>
+            <option value="DPOA">DPOA - Durable Power of Attorney</option>
+            <option value="DPX">DPX - Deposition Exhbit</option>
+            <option value="EAS">EAS - Easement</option>
+            <option value="EML">EML - E-mail</option>
+            <option value="ENV">ENV - Envelopes</option>
+            <option value="EOP">EOP - Entry of Appearance</option>
+            <option value="EXEC">EXEC - Execution Instructions</option>
+            <option value="EXH">EXH - Exhibit</option>
+            <option value="EXHL">EXHL - Exhibit List</option>
+            <option value="EXPERT">EXPERT - Expert Report</option>
+            <option value="FAXC">FAXC - Fax Cover Sheet</option>
+            <option value="FRM">FRM - Form</option>
+            <option value="GOVTPUB">GOVTPUB - Government Publication</option>
+            <option value="IDX">IDX - Index</option>
+            <option value="INS">INS - Insert</option>
+            <option value="INV">INV - Inventory</option>
+            <option value="INVCE">INVCE - Invoice</option>
+            <option value="IRR">IRR - Interrogatories</option>
+            <option value="JOIN">JOIN - Joinder</option>
+            <option value="JRYIN">JRYIN - Jury Instructions</option>
+            <option value="JUDGEM">JUDGEM - Judgement Entry</option>
+            <option value="LBL">LBL - Labels</option>
+            <option value="LGLFILE">LGLFILE - Legal File</option>
+            <option value="LGLRSRCH">LGLRSRCH - Legal Research</option>
+            <option value="LIEN">LIEN - Lien letter</option>
+            <option value="LSE">LSE - Lease</option>
+            <option value="LST">LST - List</option>
+            <option value="LTR">LTR - Letter</option>
+            <option value="MAP">MAP - Map</option>
+            <option value="MED">MED - Medical Record</option>
+            <option value="MEM">MEM - Memorandum</option>
+            <option value="MIL">MIL - Motion in Limine</option>
+            <option value="MNTS">MNTS - Minutes</option>
+            <option value="MOT">MOT - Motion</option>
+            <option value="NOTICE">NOTICE - Notice</option>
+            <option value="OBJ">OBJ - Objections</option>
+            <option value="ODR">ODR - Order</option>
+            <option value="OPEN">OPEN - Opening Statement</option>
+            <option value="OPP">OPP - Opposition</option>
+            <option value="OPT">OPT - Option</option>
+            <option value="ORD">ORD - Ordinance</option>
+            <option value="OUT">OUT - Outline</option>
+            <option value="PAT">PAT - Patent</option>
+            <option value="PET">PET - Petition</option>
+            <option value="PHT">PHT - Photograph</option>
+            <option value="PLNR">PLNR - Plan of Reorganization</option>
+            <option value="POC">POC - Proof of Claim</option>
+            <option value="PRESR">PRESR - Press Release</option>
+            <option value="PRIV">PRIV - Privilege Log</option>
+            <option value="PRMN">PRMN - Promissory Note</option>
+            <option value="PROJ">PROJ - Worldox Project Bundle</option>
+            <option value="PRS">PRS - Presentation</option>
+            <option value="PRX">PRX - Proxy</option>
+            <option value="QUEST">QUEST - Questionnaire</option>
+            <option value="RCPT">RCPT - Receipt</option>
+            <option value="REC">REC - Medical Records</option>
+            <option value="REF">REF - Refusal</option>
+            <option value="REG">REG - Regulation</option>
+            <option value="REQ">REQ - Request</option>
+            <option value="RES">RES - Resolution</option>
+            <option value="RESG">RESG - Resignation</option>
+            <option value="REV">REV - Revocation</option>
+            <option value="RFA">RFA - Request for Admission</option>
+            <option value="RFP">RFP - Request for Production</option>
+            <option value="RLS">RLS - Release</option>
+            <option value="RPLY">RPLY - Reply</option>
+            <option value="RSP">RSP - Response</option>
+            <option value="SCIEN">SCIEN - Scientific Publication</option>
+            <option value="SET">SET - Settlement</option>
+            <option value="SETCLAIM">SETCLAIM - Settlement Claim Form</option>
+            <option value="SRVL">SRVL - Service List</option>
+            <option value="SSN">SSN - Social Security Record</option>
+            <option value="STATEFAC">STATEFAC - Statement of Facts</option>
+            <option value="STATR">STATR - Status Report</option>
+            <option value="STFRPT">STFRPT - Staff Report</option>
+            <option value="STKP">STKP - Stock Power</option>
+            <option value="STMT">STMT - Statement</option>
+            <option value="STP">STP - Stipulation</option>
+            <option value="SUBP">SUBP - Subpoena</option>
+            <option value="SUG">SUG - Suggestions</option>
+            <option value="SUGD">SUGD - Suggestion of Death</option>
+            <option value="SUM">SUM - Summons</option>
+            <option value="TAXRET">TAXRET - Tax Return</option>
+            <option value="TCOMM">TCOMM - Title Commitment</option>
+            <option value="TOA">TOA - Table of Authorities</option>
+            <option value="TOC">TOC - Table of Contents</option>
+            <option value="TRANS">TRANS - Transfer</option>
+            <option value="TRST">TRST - Trust</option>
+            <option value="TRSTA">TRSTA - Trust Accounting</option>
+            <option value="TTRAN">TTRAN - Trial Transcript</option>
+            <option value="UNITP">UNITP - Unit Power</option>
+            <option value="VER">VER - Verification</option>
+            <option value="VOIR">VOIR - Voir Dire</option>
+            <option value="WEBPAGE">WEBPAGE - Web Page</option>
+            <option value="WIL">WIL - Will</option>
+            <option value="WITL">WITL - Witness List</option>
+            <option value="WITST">WITST - Witness Statement</option>
+            <option value="WTHDRL">WTHDRL - Withdrawal</option>
+            <option value="WVR">WVR - Waiver</option>
+        </select>
 
-   
-</body>
+        
+        <input type="submit" value="Submit">
+    </body>
 </html>

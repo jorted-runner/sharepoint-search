@@ -74,6 +74,30 @@ def call_downstream_api():
     ).json()
     return render_template('display.html', result=api_result)
 
+def get_contacts(url, token, all_contacts=None):
+    if all_contacts is None:
+        all_contacts = []
+    try:
+        response = requests.get(
+            url,
+            headers={'Authorization': f'Bearer {token}'},
+            timeout=30
+        )
+        response.raise_for_status()
+        data = response.json()
+        contacts = data['value']
+        all_contacts.extend(contacts)
+        next_link = data['@odata.nextLink']
+        if next_link:
+            get_contacts(next_link, token, all_contacts)
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching contacts: {e}")
+    except KeyError:
+        print("Missing key in response.")
+
+    return all_contacts
+
+
 @app.route('/get-site', methods=['GET', 'POST'])
 def get_site():
     if request.method == 'GET':
@@ -81,7 +105,7 @@ def get_site():
         if "error" in token:
             return redirect(url_for("login"))
 
-        site_url = 'hfmlegal.sharepoint.com:/sites/HFMOrganization'
+        site_url = app_config.ORG_BASE_URL
 
         try:
             # Fetch site information
@@ -104,17 +128,32 @@ def get_site():
             team_lists = lists_response.json()
 
             # Find the list with displayName 'Files'
-            lists = None
+            filesList_data = None
             for list_item in team_lists['value']:
                 if list_item['displayName'] == 'Files':
-                    lists = list_item
+                    filesList_data = list_item
                     break
 
-            if not lists:
+            if not filesList_data:
                 return "No list with displayName 'Files' found."
-            print(lists['id'])
-            # Right here I want to be able to get all the values from that list and feed it to the template
-            return render_template('get-site.html', lists=lists)
+            clients = get_contacts(f'https://graph.microsoft.com/v1.0/sites/{site_id}/lists/{filesList_data["id"]}/items?expand=fields', token["access_token"])
+            # contacts_data_response = requests.get(
+            #     f'https://graph.microsoft.com/v1.0/sites/{site_id}/lists/{filesList_data["id"]}/items?expand=fields',
+            #     headers={'Authorization': f'Bearer {token["access_token"]}'},
+            #     timeout=30
+            # )
+            # contacts_data_response.raise_for_status()
+            # clients = contacts_data_response.json()
+
+            # contacts_data_response_2 = requests.get(
+            #     clients["@odata.nextLink"],
+            #     headers={'Authorization': f'Bearer {token["access_token"]}'},
+            #     timeout=30
+            # )
+            # contacts_data_response_2.raise_for_status()
+            # clients_2 = contacts_data_response_2.json()
+            
+            return render_template('get-site.html', lists=filesList_data, clients=clients)
         except requests.exceptions.RequestException as e:
             print(f"Request failed: {e}")
             return "An error occurred while fetching the site information."
