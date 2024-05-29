@@ -113,6 +113,7 @@ def get_site():
             if not lists:
                 return "No list with displayName 'Files' found."
             print(lists['id'])
+            # Right here I want to be able to get all the values from that list and feed it to the template
             return render_template('get-site.html', lists=lists)
         except requests.exceptions.RequestException as e:
             print(f"Request failed: {e}")
