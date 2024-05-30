@@ -6,6 +6,7 @@
     <title>TEST GET SITE</title>
 </head>
 <body>
+    {% if clients %}
     <form action="/submit_form" method="post">
         <label for="dropdown">Select an Client:</label>
         <select id="dropdown" name="dropdown">
@@ -173,5 +174,9 @@
 
         
         <input type="submit" value="Submit">
+    </form>
+    {% else %}
+    <p>Client Data still being loaded. Try again soon</p>
+    {% endif %}
     </body>
 </html>

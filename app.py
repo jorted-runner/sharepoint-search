@@ -1,13 +1,18 @@
+from flask import Flask, redirect, render_template, request, session, url_for, copy_current_request_context, flash
+from flask_session import Session
 import identity.web
 import requests
-from flask import Flask, redirect, render_template, request, session, url_for
-from flask_session import Session
+
+import os
+import json
+import threading
 
 import app_config
 
 __version__ = "0.8.0"  # The version of this sample, for troubleshooting purpose
 
 app = Flask(__name__)
+background_task_running = False
 app.config.from_object(app_config)
 assert app.config["REDIRECT_PATH"] != "/", "REDIRECT_PATH must not be /"
 Session(app)
@@ -26,7 +31,6 @@ auth = identity.web.Auth(
     client_id=app.config["CLIENT_ID"],
     client_credential=app.config["CLIENT_SECRET"],
 )
-
 
 @app.route("/login")
 def login():
@@ -52,14 +56,26 @@ def logout():
 
 @app.route("/")
 def index():
+    # Start `download_contacts` in a new thread
+    @copy_current_request_context
+    def background_task():
+        global background_task_running
+        background_task_running = True
+        try:
+            download_contacts()
+        finally:
+            background_task_running = False
+    global background_task_running
+    if background_task_running:
+        pass
+    elif not os.path.exists('clients.json'):
+        threading.Thread(target=background_task).start()
+
     if not (app.config["CLIENT_ID"] and app.config["CLIENT_SECRET"]):
-        # This check is not strictly necessary.
-        # You can remove this check from your production code.
         return render_template('config_error.html')
     if not auth.get_user():
         return redirect(url_for("login"))
     return render_template('index.html', user=auth.get_user(), version=__version__)
-
 
 @app.route("/call_downstream_api")
 def call_downstream_api():
@@ -73,6 +89,48 @@ def call_downstream_api():
         timeout=30,
     ).json()
     return render_template('display.html', result=api_result)
+
+def download_contacts():
+    token = auth.get_token_for_user(scopes=['Sites.Read.All'])
+    site_url = app_config.ORG_BASE_URL
+    # Fetch site information
+    site_response = requests.get(
+        f'https://graph.microsoft.com/v1.0/sites/{site_url}',
+        headers={'Authorization': f'Bearer {token["access_token"]}'},
+        timeout=30
+    )
+    site_response.raise_for_status()
+    site_info = site_response.json()
+    site_id = site_info['id']
+
+    # Fetch all lists in the site
+    lists_response = requests.get(
+        f'https://graph.microsoft.com/v1.0/sites/{site_id}/lists',
+        headers={'Authorization': f'Bearer {token["access_token"]}'},
+        timeout=30
+    )
+    lists_response.raise_for_status()
+    team_lists = lists_response.json()
+
+    # Find the list with displayName 'Files'
+    filesList_data = None
+    for list_item in team_lists['value']:
+        if list_item['displayName'] == 'Files':
+            filesList_data = list_item
+            break
+
+    if not filesList_data:
+        return "No list with displayName 'Files' found."
+    get_contacts(f'https://graph.microsoft.com/v1.0/sites/{site_id}/lists/{filesList_data["id"]}/items?expand=fields', token["access_token"])
+
+def save_data_to_json(data, filename):
+    with open(filename, 'w') as file:
+        json.dump(data, file, indent=4)
+
+def read_json_file(filename):
+    with open(filename, 'r') as file:
+        data = json.load(file)
+    return data 
 
 def get_contacts(url, token, all_contacts=None):
     if all_contacts is None:
@@ -94,69 +152,24 @@ def get_contacts(url, token, all_contacts=None):
         print(f"Error fetching contacts: {e}")
     except KeyError:
         print("Missing key in response.")
-
-    return all_contacts
-
+    save_data_to_json(all_contacts, 'clients.json')
 
 @app.route('/get-site', methods=['GET', 'POST'])
 def get_site():
+    global background_task_running
+    if background_task_running:
+        flash("This route is temporarily disabled while a background task is running."), 503
+        return redirect(url_for('index'))
     if request.method == 'GET':
-        token = auth.get_token_for_user(scopes=['Sites.Read.All'])
-        if "error" in token:
-            return redirect(url_for("login"))
-
-        site_url = app_config.ORG_BASE_URL
-
+        clients = None
         try:
-            # Fetch site information
-            site_response = requests.get(
-                f'https://graph.microsoft.com/v1.0/sites/{site_url}',
-                headers={'Authorization': f'Bearer {token["access_token"]}'},
-                timeout=30
-            )
-            site_response.raise_for_status()
-            site_info = site_response.json()
-            site_id = site_info['id']
-
-            # Fetch all lists in the site
-            lists_response = requests.get(
-                f'https://graph.microsoft.com/v1.0/sites/{site_id}/lists',
-                headers={'Authorization': f'Bearer {token["access_token"]}'},
-                timeout=30
-            )
-            lists_response.raise_for_status()
-            team_lists = lists_response.json()
-
-            # Find the list with displayName 'Files'
-            filesList_data = None
-            for list_item in team_lists['value']:
-                if list_item['displayName'] == 'Files':
-                    filesList_data = list_item
-                    break
-
-            if not filesList_data:
-                return "No list with displayName 'Files' found."
-            clients = get_contacts(f'https://graph.microsoft.com/v1.0/sites/{site_id}/lists/{filesList_data["id"]}/items?expand=fields', token["access_token"])
-            # contacts_data_response = requests.get(
-            #     f'https://graph.microsoft.com/v1.0/sites/{site_id}/lists/{filesList_data["id"]}/items?expand=fields',
-            #     headers={'Authorization': f'Bearer {token["access_token"]}'},
-            #     timeout=30
-            # )
-            # contacts_data_response.raise_for_status()
-            # clients = contacts_data_response.json()
-
-            # contacts_data_response_2 = requests.get(
-            #     clients["@odata.nextLink"],
-            #     headers={'Authorization': f'Bearer {token["access_token"]}'},
-            #     timeout=30
-            # )
-            # contacts_data_response_2.raise_for_status()
-            # clients_2 = contacts_data_response_2.json()
-            
-            return render_template('get-site.html', lists=filesList_data, clients=clients)
-        except requests.exceptions.RequestException as e:
-            print(f"Request failed: {e}")
-            return "An error occurred while fetching the site information."
+            clients = read_json_file('clients.json')
+        except FileNotFoundError:
+            clients = None  # Handle the case where the file doesn't exist
+        return render_template('get-site.html', clients=clients)
+    elif request.method == 'POST':
+        # Handle POST request here if necessary
+        pass
         
 if __name__ == "__main__":
     app.run()
