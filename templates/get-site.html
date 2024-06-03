@@ -10,9 +10,10 @@
     <form action="/submit_form" method="post">
         <label for="dropdown">Select an Client:</label>
         <select id="dropdown" name="dropdown">
+            <option selected disabled value="">Pick a client</option>
         {% for client in clients %}
             {% if client['fields']['Title'] and not client['fields']['Title'].isalpha() %}
-                <option>{{client['fields']['Title']}} - {{client['fields']['ClientDescription']}} - {{client['fields']['ClientType']}}</option>
+                <option class="{{client['fields']['Title']}}">{{client['fields']['Title']}} - {{client['fields']['ClientDescription']}}</option>
             {% endif %}
         {% endfor %}
         </select>
@@ -27,6 +28,7 @@
         <label for="docType">DocType</label>
         <label for="docType">Select Document Type:</label>
         <select id="docType" name="docType">
+            <option selected disabled value="">Pick a DocType</option>
             <option value="ACCPT">ACCPT - Acceptance of Trust</option>
             <option value="ADV">ADV - Advertisement</option>
             <option value="AFF">AFF - Affidavit</option>
